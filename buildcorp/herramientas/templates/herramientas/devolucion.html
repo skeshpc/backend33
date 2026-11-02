@@ -1,0 +1,51 @@
+{% extends "herramientas/base.html" %}
+{% load static formatos %}
+{% block titulo %}Registrar devolución{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <a class="migas" href="{% url 'prestamo_lista' %}">Préstamos</a>
+    <h1>Registrar devolución de {{ prestamo.herramienta.codigo }}</h1>
+    <p>{{ prestamo.herramienta.nombre }}, entregada a {{ prestamo.contratista.razon_social }} para la obra {{ prestamo.obra.nombre }}.</p>
+  </div>
+</header>
+<div class="columnas">
+  <form method="post" class="hoja" novalidate>
+    {% csrf_token %}
+    {% if error_regla %}<div class="bloque-error">{{ error_regla }}</div>{% endif %}
+    <div class="campos">
+      <div class="campo{% if form.condicion.errors %} campo--error{% endif %}">
+        <label for="id_condicion">Condición al devolver</label>
+        <select name="condicion" id="id_condicion" data-condicion data-reposicion="{{ prestamo.herramienta.valor_reposicion|clp }}" aria-describedby="nota-condicion">
+          {% for valor, etiqueta in form.condicion.field.choices %}<option value="{{ valor }}" {% if form.condicion.value == valor %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+        </select>
+        <span class="ayuda" id="nota-condicion"></span>
+        {{ form.condicion.errors }}
+      </div>
+      {% include "herramientas/_campo.html" with campo=form.horas_uso %}
+      {% include "herramientas/_campo.html" with campo=form.cargo_danos ancho=True %}
+      {% include "herramientas/_campo.html" with campo=form.observaciones ancho=True %}
+      {% include "herramientas/_campo.html" with campo=form.responsable_nombre %}
+      {% include "herramientas/_campo.html" with campo=form.responsable_rut %}
+      {{ form.firma }}
+      {% include "herramientas/_firma.html" with etiqueta="Firma de quien devuelve" %}
+    </div>
+    <div class="pie-form">
+      <button class="boton boton--principal" type="submit">Registrar devolución firmada</button>
+      <a class="boton" href="{% url 'prestamo_lista' %}">Volver sin registrar</a>
+    </div>
+  </form>
+  <aside class="hoja">
+    <h2>Cobro si se devuelve hoy</h2>
+    <table class="desglose">
+      <tbody>
+        <tr><td>{{ cobro.dias_cobrados }} día{{ cobro.dias_cobrados|pluralize }} a {{ prestamo.tarifa_pactada|clp }}</td><td class="numero">{{ cobro.monto_arriendo|clp }}</td></tr>
+        <tr><td>Recargo por {{ cobro.dias_mora }} día{{ cobro.dias_mora|pluralize }} de mora</td><td class="numero">{{ cobro.monto_recargo|clp }}</td></tr>
+        <tr class="total"><td>Total sin cargo por daño</td><td class="numero">{{ cobro.monto_total|clp }}</td></tr>
+      </tbody>
+    </table>
+    <p class="chico silencio" style="margin-top:.75rem">Plazo pactado hasta el {{ prestamo.fecha_limite|date:"d-m-Y" }}. Entrega del {{ prestamo.fecha_entrega|date:"d-m-Y" }}.</p>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'herramientas/js/firma.js' %}"></script>{% endblock %}

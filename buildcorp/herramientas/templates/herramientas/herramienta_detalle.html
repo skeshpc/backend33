@@ -1,0 +1,138 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}{{ herramienta.codigo }}{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <a class="migas" href="{% url 'herramienta_lista' %}">Catálogo</a>
+    <h1>{{ herramienta.codigo }}, {{ herramienta.nombre }}</h1>
+    <p><span class="estado estado--{{ herramienta.estado }}">{{ herramienta.get_estado_display }}</span></p>
+  </div>
+  <div class="acciones">
+    {% if herramienta.estado == 'DISPONIBLE' and perms.herramientas.registrar_entrega %}
+    <a class="boton boton--principal" href="{% url 'entrega_nueva' %}?herramienta={{ herramienta.pk }}">Registrar entrega</a>
+    {% endif %}
+    {% if prestamo and perms.herramientas.registrar_devolucion %}
+    <a class="boton boton--principal" href="{% url 'devolucion' prestamo.pk %}">Registrar devolución</a>
+    {% endif %}
+    {% if perms.herramientas.change_herramienta %}<a class="boton" href="{% url 'herramienta_editar' herramienta.pk %}">Editar</a>{% endif %}
+    {% if perms.herramientas.delete_herramienta %}<a class="boton boton--peligro" href="{% url 'herramienta_eliminar' herramienta.pk %}">Eliminar</a>{% endif %}
+  </div>
+</header>
+
+{% if prestamo %}
+<div class="mensaje {% if prestamo.vencido %}mensaje--error{% else %}mensaje--info{% endif %}" style="margin-bottom:1.25rem">
+  {% if perms.herramientas.view_prestamo %}
+  En poder de <strong>{{ prestamo.contratista.razon_social }}</strong>, obra {{ prestamo.obra.nombre }}.
+  Responsable: {{ prestamo.responsable_nombre }}. Debe volver el {{ prestamo.fecha_limite|date:"d-m-Y" }}{% if prestamo.vencido %}: lleva {{ prestamo.dias_atraso }} día{{ prestamo.dias_atraso|pluralize }} de atraso{% endif %}.
+  <a href="{% url 'prestamo_acta' prestamo.pk %}">Ver acta firmada</a>
+  {% else %}
+  Esta herramienta está prestada y debe volver el {{ prestamo.fecha_limite|date:"d-m-Y" }}.
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="columnas">
+  <div>
+    <section class="hoja">
+      <h2>Ficha</h2>
+      <dl class="datos">
+        <div><dt>Categoría</dt><dd>{{ herramienta.categoria.nombre }}</dd></div>
+        <div><dt>Marca y modelo</dt><dd>{{ herramienta.marca|default:"Sin marca" }} {{ herramienta.modelo }}</dd></div>
+        <div><dt>Número de serie</dt><dd>{{ herramienta.numero_serie|default:"Sin registrar" }}</dd></div>
+        <div><dt>Ubicación en bodega</dt><dd>{{ herramienta.ubicacion|default:"Sin registrar" }}</dd></div>
+        <div><dt>Horas de uso</dt><dd>{{ herramienta.horas_uso|floatformat:"-1" }}</dd></div>
+        <div><dt>Tarifa diaria</dt><dd>{{ herramienta.tarifa_diaria|clp }}</dd></div>
+        <div><dt>Valor de reposición</dt><dd>{{ herramienta.valor_reposicion|clp }}</dd></div>
+        <div><dt>Adquisición</dt><dd>{{ herramienta.fecha_adquisicion|date:"d-m-Y"|default:"Sin registrar" }}</dd></div>
+      </dl>
+      {% if herramienta.observaciones %}<p style="margin-top:1rem">{{ herramienta.observaciones|linebreaksbr }}</p>{% endif %}
+    </section>
+
+    {% if perms.herramientas.view_planmantenimiento %}
+    <section class="hoja">
+      <div class="hoja-cabeza">
+        <h2>Mantenimiento</h2>
+        <div class="acciones">
+          {% if perms.herramientas.add_planmantenimiento and herramienta.estado != 'BAJA' %}<a class="boton boton--chico" href="{% url 'plan_crear' %}?herramienta={{ herramienta.pk }}">Agregar plan</a>{% endif %}
+          {% if perms.herramientas.add_ordenmantenimiento and herramienta.estado != 'BAJA' %}<a class="boton boton--chico" href="{% url 'orden_crear' %}?herramienta={{ herramienta.pk }}">Programar orden</a>{% endif %}
+        </div>
+      </div>
+      {% if planes %}
+      <ul class="lista-corta">
+        {% for plan in planes %}
+        <li>
+          <div class="fila-titulo">
+            <strong>{{ plan.nombre }}</strong>
+            {% if not plan.activo %}<span class="estado estado--gris">Inactivo</span>{% else %}<span class="estado {% if plan.situacion == 'VENCIDO' %}estado--rojo{% elif plan.situacion == 'PROXIMO' %}estado--ambar{% else %}estado--verde{% endif %}">{{ plan.situacion_display }}</span>{% endif %}
+          </div>
+          <p>{% if plan.proxima_fecha %}Próxima fecha: {{ plan.proxima_fecha|date:"d-m-Y" }}. {% endif %}{% if plan.proximas_horas is not None %}Próxima a las {{ plan.proximas_horas|floatformat:"-1" }} horas.{% endif %}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="silencio">Sin planes. Agrega uno para programar su mantención por fecha o por uso.</p>{% endif %}
+      {% if ordenes %}
+      <h3 style="margin-top:1.1rem">Órdenes de trabajo</h3>
+      <ul class="lista-corta" style="margin-top:.5rem">
+        {% for o in ordenes %}
+        <li><div class="fila-titulo"><a href="{% url 'orden_detalle' o.pk %}">{{ o.numero }}</a><span class="chico silencio">{{ o.get_tipo_display }}, {{ o.get_estado_display|lower }}</span></div><p>{{ o.descripcion }}</p></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if perms.herramientas.view_prestamo %}
+    <section class="hoja">
+      <h2>Préstamos recientes</h2>
+      {% if prestamos %}
+      <div class="tabla-marco">
+        <table class="apilable">
+          <thead><tr><th>Préstamo</th><th>Contratista</th><th>Entrega</th><th>Devolución</th><th class="numero">Cobro</th></tr></thead>
+          <tbody>
+            {% for p in prestamos %}
+            <tr>
+              <td data-etiqueta="Préstamo"><a href="{% url 'prestamo_acta' p.pk %}">{{ p.numero }}</a></td>
+              <td data-etiqueta="Contratista">{{ p.contratista.razon_social }}</td>
+              <td data-etiqueta="Entrega">{{ p.fecha_entrega|date:"d-m-Y" }}</td>
+              <td data-etiqueta="Devolución">{{ p.fecha_devolucion|date:"d-m-Y"|default:"En préstamo" }}</td>
+              <td class="numero" data-etiqueta="Cobro">{{ p.cobro_a_la_fecha.monto_total|clp }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<p class="silencio">Esta herramienta todavía no se ha prestado.</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if form_estado and perms.herramientas.cambiar_estado %}
+    <section class="hoja">
+      <h2>Cambiar estado</h2>
+      <form method="post" action="{% url 'herramienta_cambiar_estado' herramienta.pk %}">
+        {% csrf_token %}
+        <div class="campo" style="margin-bottom:.7rem">{{ form_estado.estado.label_tag }}{{ form_estado.estado }}</div>
+        <div class="campo" style="margin-bottom:.7rem">{{ form_estado.motivo.label_tag }}{{ form_estado.motivo }}</div>
+        <button class="boton" type="submit">Cambiar estado</button>
+      </form>
+    </section>
+    {% elif herramienta.estado == 'EN_USO' %}
+    <section class="hoja"><p class="silencio" style="margin:0">El estado cambiará cuando se registre la devolución firmada.</p></section>
+    {% endif %}
+    <section class="hoja">
+      <h2>Trazabilidad</h2>
+      <ol class="trazas">
+        {% for m in movimientos %}
+        <li>
+          <span class="estado estado--{{ m.estado_nuevo }}">{{ m.get_estado_nuevo_display }}</span>
+          <p>{{ m.motivo }}</p>
+          <p class="chico">{{ m.fecha|date:"d-m-Y H:i" }}{% if m.usuario %}, {{ m.usuario|nombre_de }}{% endif %}</p>
+        </li>
+        {% empty %}<li>Sin movimientos registrados.</li>{% endfor %}
+      </ol>
+    </section>
+  </div>
+</div>
+{% endblock %}

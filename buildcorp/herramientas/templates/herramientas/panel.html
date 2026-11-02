@@ -1,0 +1,102 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Tablero{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Tablero del pañol</h1>
+    <p>{{ total_herramientas }} herramientas. Un gancho vacío significa que la herramienta está en obra.</p>
+  </div>
+  {% if perms.herramientas.registrar_entrega %}
+  <div class="acciones"><a class="boton boton--principal" href="{% url 'entrega_nueva' %}">Registrar entrega</a></div>
+  {% endif %}
+</header>
+
+<ul class="leyenda" aria-label="Herramientas por estado">
+  {% for e in estados %}
+  <li><a href="{% url 'herramienta_lista' %}?estado={{ e.valor }}"><b class="estado--{{ e.valor }}">{{ e.total }}</b>{{ e.nombre }}</a></li>
+  {% endfor %}
+</ul>
+
+<div class="columnas">
+  <section class="tablero" aria-label="Tablero de herramientas">
+    {% for grupo in tablero %}
+    <div class="tablero-grupo">
+      <h3>{{ grupo.categoria }}</h3>
+      <ul class="ganchos">
+        {% for h in grupo.herramientas %}
+        <li>
+          <a class="placa placa--{{ h.estado }}{% if h.atrasada %} placa--atrasada{% endif %}{% if h.mantencion_vencida %} placa--vencida{% endif %}" href="{{ h.get_absolute_url }}">
+            <b>{{ h.codigo }}</b>
+            <span>{{ h.nombre }}</span>
+            <small>{% if h.atrasada %}Devolución vencida{% elif h.mantencion_vencida %}Mantención vencida{% else %}{{ h.get_estado_display }}{% endif %}</small>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% empty %}
+    <p>El catálogo está vacío. Agrega la primera herramienta para verla en su gancho.</p>
+    {% endfor %}
+  </section>
+
+  <div>
+    {% if perms.herramientas.view_prestamo %}
+    <section class="hoja">
+      <div class="hoja-cabeza">
+        <h2>Devoluciones vencidas</h2>
+        {% if total_vencidos %}<a class="chico" href="{% url 'prestamo_lista' %}?vista=vencidos">Ver las {{ total_vencidos }}</a>{% endif %}
+      </div>
+      {% if vencidos %}
+      <ul class="lista-corta">
+        {% for p in vencidos %}
+        <li>
+          <div class="fila-titulo">
+            <a href="{% url 'herramienta_detalle' p.herramienta_id %}">{{ p.herramienta.codigo }}</a>
+            <span class="estado estado--rojo">{{ p.dias_atraso }} día{{ p.dias_atraso|pluralize }} de atraso</span>
+          </div>
+          <p>{{ p.contratista.razon_social }}, {{ p.obra.nombre }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="silencio">Todas las herramientas prestadas están dentro de plazo.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if perms.herramientas.view_contratista %}
+    <section class="hoja">
+      <h2>Contratistas bloqueados</h2>
+      {% if bloqueados %}
+      <ul class="lista-corta">
+        {% for c in bloqueados %}
+        <li><a href="{{ c.get_absolute_url }}">{{ c.razon_social }}</a><p>{{ c.motivo_bloqueo }}</p></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="silencio">Ningún contratista está bloqueado.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if perms.herramientas.view_planmantenimiento %}
+    <section class="hoja">
+      <div class="hoja-cabeza">
+        <h2>Mantenciones por atender</h2>
+        {% if total_planes_atencion %}<a class="chico" href="{% url 'plan_lista' %}">Ver las {{ total_planes_atencion }}</a>{% endif %}
+      </div>
+      {% if planes_atencion %}
+      <ul class="lista-corta">
+        {% for plan in planes_atencion %}
+        <li>
+          <div class="fila-titulo">
+            <a href="{% url 'herramienta_detalle' plan.herramienta_id %}">{{ plan.herramienta.codigo }}</a>
+            <span class="estado {% if plan.situacion == 'VENCIDO' %}estado--rojo{% else %}estado--ambar{% endif %}">{{ plan.situacion_display }}</span>
+          </div>
+          <p>{{ plan.nombre }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="silencio">Todos los planes están al día.</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Órdenes de trabajo{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Órdenes de trabajo</h1>
+    <p>La revisión programada crea las órdenes preventivas. Una devolución con daño abre una correctiva.</p>
+  </div>
+  {% if perms.herramientas.add_ordenmantenimiento %}<a class="boton boton--principal" href="{% url 'orden_crear' %}">Programar orden</a>{% endif %}
+</header>
+<nav class="pestanas" aria-label="Vistas">
+  <a href="?estado=abiertas" {% if estado == 'abiertas' %}aria-current="true"{% endif %}>Abiertas</a>
+  {% for valor, nombre in estados %}<a href="?estado={{ valor }}" {% if estado == valor %}aria-current="true"{% endif %}>{{ nombre }}</a>{% endfor %}
+  <a href="?estado=todas" {% if estado == 'todas' %}aria-current="true"{% endif %}>Todas</a>
+</nav>
+<section class="hoja">
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Orden</th><th>Herramienta</th><th>Tipo</th><th>Descripción</th><th>Programada</th><th>Técnico</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for o in pagina %}
+        <tr>
+          <td data-etiqueta="Orden"><a href="{% url 'orden_detalle' o.pk %}">{{ o.numero }}</a></td>
+          <td data-etiqueta="Herramienta"><span class="codigo">{{ o.herramienta.codigo }}</span></td>
+          <td data-etiqueta="Tipo">{{ o.get_tipo_display }}</td>
+          <td data-etiqueta="Descripción">{{ o.descripcion }}</td>
+          <td data-etiqueta="Programada">{{ o.fecha_programada|date:"d-m-Y" }}</td>
+          <td data-etiqueta="Técnico">{{ o.tecnico|nombre_de:"Sin asignar" }}</td>
+          <td data-etiqueta="Estado"><span class="estado {% if o.estado == 'EN_CURSO' %}estado--ambar{% elif o.estado == 'COMPLETADA' %}estado--verde{% else %}estado--gris{% endif %}">{{ o.get_estado_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" with parametros="estado="|add:estado %}
+  {% else %}<p class="vacio">No hay órdenes en esta vista.</p>{% endif %}
+</section>
+{% endblock %}

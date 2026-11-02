@@ -1,0 +1,42 @@
+{% extends "herramientas/base.html" %}
+{% load static %}
+{% block titulo %}Registrar entrega{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Registrar entrega</h1>
+    <p>La herramienta queda en uso cuando el responsable de obra firma.</p>
+  </div>
+</header>
+<form method="post" class="hoja form-angosto" novalidate>
+  {% csrf_token %}
+  {% if error_regla %}<div class="bloque-error">{{ error_regla }}</div>{% endif %}
+  {% if form.non_field_errors %}<div class="bloque-error">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="campos">
+    {% include "herramientas/_campo.html" with campo=form.herramienta ancho=True %}
+    <div class="campo campo--ancho{% if form.contratista.errors %} campo--error{% endif %}">
+      <label for="{{ form.contratista.id_for_label }}">Contratista</label>
+      <select name="contratista" id="{{ form.contratista.id_for_label }}" data-contratista-estado aria-describedby="estado-contratista">
+        {% for valor, etiqueta in form.contratista.field.choices %}
+        <option value="{{ valor }}" {% if form.contratista.value|stringformat:"s" == valor|stringformat:"s" %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+      <div id="estado-contratista" class="aviso-campo" role="status" hidden></div>
+      {{ form.contratista.errors }}
+    </div>
+    {% include "herramientas/_campo.html" with campo=form.obra ancho=True %}
+    {% include "herramientas/_campo.html" with campo=form.responsable_nombre %}
+    {% include "herramientas/_campo.html" with campo=form.responsable_rut %}
+    {% include "herramientas/_campo.html" with campo=form.fecha_limite %}
+    {% include "herramientas/_campo.html" with campo=form.condicion %}
+    {% include "herramientas/_campo.html" with campo=form.observaciones ancho=True %}
+    {{ form.firma }}
+    {% include "herramientas/_firma.html" with etiqueta="Firma del responsable de obra" %}
+  </div>
+  <div class="pie-form">
+    <button class="boton boton--principal" type="submit" data-enviar-entrega>Registrar entrega firmada</button>
+    <a class="boton" href="{% url 'prestamo_lista' %}">Volver sin registrar</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'herramientas/js/firma.js' %}"></script>{% endblock %}

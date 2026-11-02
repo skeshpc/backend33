@@ -1,0 +1,51 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Préstamos{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <h1>Préstamos</h1>
+  {% if perms.herramientas.registrar_entrega %}<a class="boton boton--principal" href="{% url 'entrega_nueva' %}">Registrar entrega</a>{% endif %}
+</header>
+<nav class="pestanas" aria-label="Vistas">
+  <a href="?vista=activos" {% if vista == 'activos' %}aria-current="true"{% endif %}>En préstamo ({{ total_activos }})</a>
+  <a href="?vista=vencidos" {% if vista == 'vencidos' %}aria-current="true"{% endif %}>Vencidos ({{ total_vencidos }})</a>
+  <a href="?vista=historial" {% if vista == 'historial' %}aria-current="true"{% endif %}>Historial</a>
+</nav>
+<section class="hoja">
+  <form class="filtros" method="get">
+    <input type="hidden" name="vista" value="{{ vista }}">
+    <label>Buscar<input type="search" name="q" value="{{ consulta }}" placeholder="Herramienta, contratista o responsable"></label>
+    <button class="boton" type="submit">Filtrar</button>
+  </form>
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Préstamo</th><th>Herramienta</th><th>Contratista y obra</th><th>Responsable</th><th>Límite</th><th>Situación</th><th class="numero">Cobro</th><th></th></tr></thead>
+      <tbody>
+        {% for p in pagina %}
+        <tr>
+          <td data-etiqueta="Préstamo"><a href="{% url 'prestamo_acta' p.pk %}">{{ p.numero }}</a></td>
+          <td data-etiqueta="Herramienta"><span class="codigo">{{ p.herramienta.codigo }}</span></td>
+          <td data-etiqueta="Contratista y obra"><span>{{ p.contratista.razon_social }}<br><span class="chico silencio">{{ p.obra.nombre }}</span></span></td>
+          <td data-etiqueta="Responsable">{{ p.responsable_nombre }}</td>
+          <td data-etiqueta="Límite">{{ p.fecha_limite|date:"d-m-Y" }}</td>
+          <td data-etiqueta="Situación">
+            {% if p.vencido %}<span class="estado estado--rojo">{{ p.dias_atraso }} día{{ p.dias_atraso|pluralize }} de atraso</span>
+            {% elif p.activo %}<span class="estado estado--EN_USO">En préstamo</span>
+            {% else %}<span class="estado estado--gris">{{ p.get_condicion_devolucion_display }}</span>{% endif %}
+          </td>
+          <td class="numero" data-etiqueta="Cobro">{{ p.cobro_a_la_fecha.monto_total|clp }}</td>
+          <td class="acciones-celda">
+            {% if p.activo and perms.herramientas.registrar_devolucion %}<a class="boton boton--chico boton--principal" href="{% url 'devolucion' p.pk %}">Registrar devolución</a>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" %}
+  {% else %}
+  <p class="vacio">{% if consulta %}Ningún préstamo coincide con esta búsqueda.{% elif vista == 'vencidos' %}No hay devoluciones vencidas.{% else %}No hay préstamos en esta vista.{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

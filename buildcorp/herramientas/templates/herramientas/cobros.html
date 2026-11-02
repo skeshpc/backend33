@@ -1,0 +1,58 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Cobros{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Cobros a contratistas</h1>
+    <p>Cada cobro se calcula al devolver: días corridos por tarifa pactada, más el recargo por mora y el cargo por daño o extravío.</p>
+  </div>
+  <a class="boton" href="{% url 'cobros_csv' %}{% if parametros %}?{{ parametros }}{% endif %}">Exportar a CSV</a>
+</header>
+<section class="hoja">
+  <form class="filtros" method="get">
+    <label>Contratista
+      <select name="contratista">
+        <option value="">Todos</option>
+        {% for c in contratistas %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"d" == contratista %}selected{% endif %}>{{ c.razon_social }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Desde<input type="date" name="desde" value="{{ desde }}"></label>
+    <label>Hasta<input type="date" name="hasta" value="{{ hasta }}"></label>
+    <button class="boton" type="submit">Filtrar</button>
+  </form>
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Préstamo</th><th>Contratista</th><th>Herramienta</th><th>Devolución</th><th class="numero">Días</th><th class="numero">Mora</th><th class="numero">Arriendo</th><th class="numero">Recargo</th><th class="numero">Daño</th><th class="numero">Total</th></tr></thead>
+      <tbody>
+        {% for p in pagina %}
+        <tr>
+          <td data-etiqueta="Préstamo"><a href="{% url 'prestamo_acta' p.pk %}">{{ p.numero }}</a></td>
+          <td data-etiqueta="Contratista">{{ p.contratista.razon_social }}</td>
+          <td data-etiqueta="Herramienta">{{ p.herramienta.codigo }}</td>
+          <td data-etiqueta="Devolución">{{ p.fecha_devolucion|date:"d-m-Y" }}</td>
+          <td class="numero" data-etiqueta="Días">{{ p.dias_cobrados }}</td>
+          <td class="numero" data-etiqueta="Mora">{{ p.dias_mora }}</td>
+          <td class="numero" data-etiqueta="Arriendo">{{ p.monto_arriendo|clp }}</td>
+          <td class="numero" data-etiqueta="Recargo">{{ p.monto_recargo|clp }}</td>
+          <td class="numero" data-etiqueta="Daño">{{ p.cargo_danos|clp }}</td>
+          <td class="numero" data-etiqueta="Total"><strong>{{ p.monto_total|clp }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6" data-etiqueta="">Total del filtro</td>
+          <td class="numero" data-etiqueta="Arriendo">{{ totales.arriendo|clp }}</td>
+          <td class="numero" data-etiqueta="Recargo">{{ totales.recargo|clp }}</td>
+          <td class="numero" data-etiqueta="Daño">{{ totales.danos|clp }}</td>
+          <td class="numero" data-etiqueta="Total">{{ totales.total|clp }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" %}
+  {% else %}<p class="vacio">No hay devoluciones con estos filtros. Los cobros aparecen aquí cuando se registra una devolución.</p>{% endif %}
+</section>
+{% endblock %}

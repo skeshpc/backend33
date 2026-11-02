@@ -1,0 +1,18 @@
+[Unit]
+Description=BuildCorp (Django con Gunicorn)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=__APP_DIR__
+# Se ejecuta como root antes de partir: la IP pública puede cambiar al reiniciar el laboratorio.
+ExecStartPre=+/bin/bash __APP_DIR__/deploy/actualizar_ip.sh
+ExecStart=__APP_DIR__/.venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8001 --workers 2 --timeout 60 --access-logfile - --error-logfile -
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

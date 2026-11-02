@@ -1,0 +1,30 @@
+{% extends "herramientas/base.html" %}
+{% block titulo %}Obras{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <h1>Obras</h1>
+  {% if perms.herramientas.add_obra %}<a class="boton boton--principal" href="{% url 'obra_crear' %}">Agregar obra</a>{% endif %}
+</header>
+<section class="hoja">
+  {% if obras %}
+  <table class="apilable">
+    <thead><tr><th>Obra</th><th>Dirección</th><th>Comuna</th><th>Situación</th><th class="numero">Préstamos abiertos</th><th></th></tr></thead>
+    <tbody>
+      {% for o in obras %}
+      <tr>
+        <td data-etiqueta="Obra"><strong>{{ o.nombre }}</strong></td>
+        <td data-etiqueta="Dirección">{{ o.direccion }}</td>
+        <td data-etiqueta="Comuna">{{ o.comuna }}</td>
+        <td data-etiqueta="Situación"><span class="estado {% if o.activa %}estado--verde{% else %}estado--gris{% endif %}">{% if o.activa %}Activa{% else %}Inactiva{% endif %}</span></td>
+        <td class="numero" data-etiqueta="Préstamos abiertos">{{ o.activos }}</td>
+        <td class="acciones-celda">
+          {% if perms.herramientas.change_obra %}<a class="boton boton--chico" href="{% url 'obra_editar' o.pk %}">Editar</a>{% endif %}
+          {% if perms.herramientas.delete_obra %}<a class="boton boton--chico boton--peligro" href="{% url 'obra_eliminar' o.pk %}">Eliminar</a>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="vacio">Agrega una obra para poder entregarle herramientas.</p>{% endif %}
+</section>
+{% endblock %}

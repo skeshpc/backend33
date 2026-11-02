@@ -1,0 +1,85 @@
+{% load static formatos %}<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Panel{% endblock %} | BuildCorp</title>
+  <link rel="stylesheet" href="{% static 'herramientas/css/app.css' %}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2320413b'/%3E%3Ccircle cx='16' cy='9' r='3.2' fill='%23f5bc14'/%3E%3Crect x='11' y='15' width='10' height='12' rx='1' fill='%23f5bc14'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+{% with actual=request.resolver_match.url_name %}
+<div class="barra-movil">
+  <a href="{% url 'panel' %}">BuildCorp</a>
+  <button type="button" data-menu-boton aria-expanded="false" aria-controls="menu">
+    Menú{% if alertas_pendientes %} <span class="contador">{{ alertas_pendientes }}</span>{% endif %}
+  </button>
+</div>
+<div class="marco">
+  <aside class="lateral" id="menu">
+    <a class="marca" href="{% url 'panel' %}">BuildCorp<small>Pañol de herramientas</small></a>
+    <nav aria-label="Principal">
+      <div class="nav-grupo">
+        <a href="{% url 'panel' %}" {% if actual == 'panel' %}aria-current="page"{% endif %}>Tablero</a>
+        {% if perms.herramientas.view_alerta %}
+        <a href="{% url 'alerta_lista' %}" {% if actual == 'alerta_lista' %}aria-current="page"{% endif %}>
+          Alertas <span class="contador" data-alertas {% if not alertas_pendientes %}hidden{% endif %}>{{ alertas_pendientes }}</span>
+        </a>
+        {% endif %}
+      </div>
+      <div class="nav-grupo">
+        {% if perms.herramientas.view_prestamo %}
+        <a href="{% url 'prestamo_lista' %}" {% if actual == 'prestamo_lista' or actual == 'devolucion' or actual == 'prestamo_acta' %}aria-current="page"{% endif %}>Préstamos</a>
+        {% endif %}
+        {% if perms.herramientas.registrar_entrega %}
+        <a href="{% url 'entrega_nueva' %}" {% if actual == 'entrega_nueva' %}aria-current="page"{% endif %}>Registrar entrega</a>
+        {% endif %}
+        {% if perms.herramientas.ver_cobros %}
+        <a href="{% url 'cobros' %}" {% if actual == 'cobros' %}aria-current="page"{% endif %}>Cobros</a>
+        {% endif %}
+      </div>
+      <div class="nav-grupo">
+        {% if perms.herramientas.view_herramienta %}
+        <a href="{% url 'herramienta_lista' %}" {% if 'herramienta' in actual %}aria-current="page"{% endif %}>Catálogo</a>
+        {% endif %}
+        {% if perms.herramientas.view_planmantenimiento %}
+        <a href="{% url 'plan_lista' %}" {% if 'plan_' in actual %}aria-current="page"{% endif %}>Planes de mantenimiento</a>
+        {% endif %}
+        {% if perms.herramientas.view_ordenmantenimiento %}
+        <a href="{% url 'orden_lista' %}" {% if 'orden_' in actual %}aria-current="page"{% endif %}>Órdenes de trabajo</a>
+        {% endif %}
+      </div>
+      <div class="nav-grupo">
+        {% if perms.herramientas.view_contratista %}
+        <a href="{% url 'contratista_lista' %}" {% if 'contratista' in actual %}aria-current="page"{% endif %}>Contratistas</a>
+        {% endif %}
+        {% if perms.herramientas.view_obra %}
+        <a href="{% url 'obra_lista' %}" {% if 'obra_' in actual %}aria-current="page"{% endif %}>Obras</a>
+        {% endif %}
+        {% if perms.herramientas.view_categoria %}
+        <a href="{% url 'categoria_lista' %}" {% if 'categoria' in actual %}aria-current="page"{% endif %}>Categorías</a>
+        {% endif %}
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administrador de Django</a>{% endif %}
+      </div>
+    </nav>
+    <div class="usuario">
+      <strong>{{ user.get_full_name|default:user.username }}</strong>
+      <span>{{ user|rol_de }}</span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Cerrar sesión</button></form>
+    </div>
+  </aside>
+  <main class="principal" id="contenido">
+    {% if messages %}
+    <div class="mensajes" role="status">
+      {% for mensaje in messages %}<div class="mensaje mensaje--{{ mensaje.tags }}">{{ mensaje }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+{% endwith %}
+<script src="{% static 'herramientas/js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

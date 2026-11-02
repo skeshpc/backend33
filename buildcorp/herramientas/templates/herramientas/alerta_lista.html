@@ -1,0 +1,44 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Alertas{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Alertas</h1>
+    <p>Una alerta se cierra sola cuando su causa desaparece, por ejemplo al registrar la devolución.</p>
+  </div>
+  {% if perms.herramientas.atender_alerta %}
+  <form method="post" action="{% url 'alertas_procesar' %}">{% csrf_token %}<button class="boton" type="submit">Revisar ahora</button></form>
+  {% endif %}
+</header>
+<nav class="pestanas" aria-label="Vistas">
+  <a href="?vista=abiertas" {% if vista == 'abiertas' %}aria-current="true"{% endif %}>Abiertas</a>
+  <a href="?vista=resueltas" {% if vista == 'resueltas' %}aria-current="true"{% endif %}>Resueltas</a>
+</nav>
+<section class="hoja">
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Alerta</th><th>Tipo</th><th>Nivel</th><th>Creada</th><th>Revisión</th><th></th></tr></thead>
+      <tbody>
+        {% for a in pagina %}
+        <tr>
+          <td data-etiqueta="Alerta">{{ a.mensaje }}</td>
+          <td data-etiqueta="Tipo">{{ a.get_tipo_display }}</td>
+          <td data-etiqueta="Nivel"><span class="estado {% if a.nivel == 'CRITICO' %}estado--rojo{% else %}estado--ambar{% endif %}">{{ a.get_nivel_display }}</span></td>
+          <td data-etiqueta="Creada">{{ a.creada|date:"d-m-Y H:i" }}</td>
+          <td data-etiqueta="Revisión">{% if a.atendida_en %}{{ a.atendida_por|nombre_de }}{% elif a.resuelta_en %}Resuelta{% else %}Pendiente{% endif %}</td>
+          <td class="acciones-celda">
+            {% if not a.atendida_en and not a.resuelta_en and perms.herramientas.atender_alerta %}
+            <form method="post" action="{% url 'alerta_atender' a.pk %}">{% csrf_token %}<button class="boton boton--chico" type="submit">Marcar revisada</button></form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" with parametros="vista="|add:vista %}
+  {% else %}<p class="vacio">No hay alertas en esta vista.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% load static %}<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ titulo }} | BuildCorp</title>
+  <link rel="stylesheet" href="{% static 'herramientas/css/app.css' %}">
+</head>
+<body>
+<main class="principal">
+  <div class="error-pagina">
+    <b>{{ codigo }}</b>
+    <h1>{{ titulo }}</h1>
+    <p>{{ detalle }}</p>
+    <a class="boton boton--principal" href="/">Volver al tablero</a>
+  </div>
+</main>
+</body>
+</html>

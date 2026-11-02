@@ -1,0 +1,28 @@
+{% extends "herramientas/base.html" %}
+{% block titulo %}Categorías{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <h1>Categorías</h1>
+  {% if perms.herramientas.add_categoria %}<a class="boton boton--principal" href="{% url 'categoria_crear' %}">Agregar categoría</a>{% endif %}
+</header>
+<section class="hoja">
+  {% if categorias %}
+  <table class="apilable">
+    <thead><tr><th>Categoría</th><th>Descripción</th><th class="numero">Herramientas</th><th></th></tr></thead>
+    <tbody>
+      {% for c in categorias %}
+      <tr>
+        <td data-etiqueta="Categoría"><a href="{% url 'herramienta_lista' %}?categoria={{ c.pk }}">{{ c.nombre }}</a></td>
+        <td data-etiqueta="Descripción">{{ c.descripcion }}</td>
+        <td class="numero" data-etiqueta="Herramientas">{{ c.total }}</td>
+        <td class="acciones-celda">
+          {% if perms.herramientas.change_categoria %}<a class="boton boton--chico" href="{% url 'categoria_editar' c.pk %}">Editar</a>{% endif %}
+          {% if perms.herramientas.delete_categoria %}<a class="boton boton--chico boton--peligro" href="{% url 'categoria_eliminar' c.pk %}">Eliminar</a>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="vacio">Agrega una categoría para empezar a ordenar el catálogo.</p>{% endif %}
+</section>
+{% endblock %}

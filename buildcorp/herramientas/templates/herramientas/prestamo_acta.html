@@ -1,0 +1,74 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Acta {{ prestamo.numero }}{% endblock %}
+{% block contenido %}
+<header class="cabecera no-imprimir">
+  <div><a class="migas" href="{% url 'prestamo_lista' %}">Préstamos</a><h1>Acta {{ prestamo.numero }}</h1></div>
+  <div class="acciones">
+    {% if prestamo.activo and perms.herramientas.registrar_devolucion %}<a class="boton boton--principal" href="{% url 'devolucion' prestamo.pk %}">Registrar devolución</a>{% endif %}
+    <button class="boton" type="button" onclick="window.print()">Imprimir acta</button>
+  </div>
+</header>
+<article class="acta">
+  <div class="acta-cabeza">
+    <div><h2 style="margin:0;font-size:1.8rem">Acta de entrega y devolución</h2><span class="silencio">BuildCorp, pañol de herramientas</span></div>
+    <div style="text-align:right"><strong>{{ prestamo.numero }}</strong><br>
+      {% if prestamo.vencido %}<span class="estado estado--rojo">{{ prestamo.dias_atraso }} día{{ prestamo.dias_atraso|pluralize }} de atraso</span>
+      {% elif prestamo.activo %}<span class="estado estado--EN_USO">En préstamo</span>
+      {% else %}<span class="estado estado--gris">Devuelto</span>{% endif %}
+    </div>
+  </div>
+  <dl class="datos">
+    <div><dt>Herramienta</dt><dd>{{ prestamo.herramienta.codigo }}, {{ prestamo.herramienta.nombre }}</dd></div>
+    <div><dt>Número de serie</dt><dd>{{ prestamo.herramienta.numero_serie|default:"Sin registrar" }}</dd></div>
+    <div><dt>Contratista</dt><dd>{{ prestamo.contratista.razon_social }}</dd></div>
+    <div><dt>RUT contratista</dt><dd>{{ prestamo.contratista.rut }}</dd></div>
+    <div><dt>Obra</dt><dd>{{ prestamo.obra.nombre }}</dd></div>
+    <div><dt>Responsable de obra</dt><dd>{{ prestamo.responsable_nombre }} ({{ prestamo.responsable_rut }})</dd></div>
+    <div><dt>Fecha de entrega</dt><dd>{{ prestamo.fecha_entrega|date:"d-m-Y H:i" }}</dd></div>
+    <div><dt>Fecha límite</dt><dd>{{ prestamo.fecha_limite|date:"d-m-Y" }}</dd></div>
+    <div><dt>Condición al entregar</dt><dd>{{ prestamo.get_condicion_entrega_display }}</dd></div>
+    <div><dt>Entregó</dt><dd>{{ prestamo.entregado_por|nombre_de }}</dd></div>
+    {% if not prestamo.activo %}
+    <div><dt>Fecha de devolución</dt><dd>{{ prestamo.fecha_devolucion|date:"d-m-Y H:i" }}</dd></div>
+    <div><dt>Condición al devolver</dt><dd>{{ prestamo.get_condicion_devolucion_display }}</dd></div>
+    <div><dt>Horas de uso</dt><dd>{{ prestamo.horas_uso|floatformat:"-1" }}</dd></div>
+    <div><dt>Recibió</dt><dd>{{ prestamo.recibido_por|nombre_de }}</dd></div>
+    {% endif %}
+  </dl>
+  {% if prestamo.observaciones_entrega %}<p style="margin-top:1rem"><strong>Observaciones de la entrega:</strong> {{ prestamo.observaciones_entrega }}</p>{% endif %}
+  {% if prestamo.observaciones_devolucion %}<p style="margin-top:1rem"><strong>Observaciones de la devolución:</strong> {{ prestamo.observaciones_devolucion }}</p>{% endif %}
+
+  {% if perms.herramientas.ver_cobros %}
+  <h2>{% if prestamo.activo %}Cobro estimado a hoy{% else %}Cobro{% endif %}</h2>
+  <table class="desglose">
+    <tbody>
+      <tr><td>{{ cobro.dias_cobrados }} día{{ cobro.dias_cobrados|pluralize }} a {{ prestamo.tarifa_pactada|clp }}</td><td class="numero">{{ cobro.monto_arriendo|clp }}</td></tr>
+      <tr><td>Recargo por {{ cobro.dias_mora }} día{{ cobro.dias_mora|pluralize }} de mora</td><td class="numero">{{ cobro.monto_recargo|clp }}</td></tr>
+      <tr><td>Cargo por daño o extravío</td><td class="numero">{{ cobro.cargo_danos|clp }}</td></tr>
+      <tr class="total"><td>Total</td><td class="numero">{{ cobro.monto_total|clp }}</td></tr>
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Firmas</h2>
+  <div class="firmas">
+    {% if firma_entrega %}
+    <div class="firma-acta">
+      <img src="{{ firma_entrega.imagen_data_url }}" alt="Firma de {{ firma_entrega.nombre }} en la entrega">
+      <p><strong>Entrega:</strong> {{ firma_entrega.nombre }}, {{ firma_entrega.rut }}, {{ firma_entrega.fecha|date:"d-m-Y H:i" }}</p>
+      <p class="huella">SHA-256 {{ firma_entrega.huella }} {% if firma_entrega.es_integra %}(verificada){% else %}<strong style="color:var(--rojo)">(no coincide con los datos)</strong>{% endif %}</p>
+    </div>
+    {% endif %}
+    {% if firma_devolucion %}
+    <div class="firma-acta">
+      <img src="{{ firma_devolucion.imagen_data_url }}" alt="Firma de {{ firma_devolucion.nombre }} en la devolución">
+      <p><strong>Devolución:</strong> {{ firma_devolucion.nombre }}, {{ firma_devolucion.rut }}, {{ firma_devolucion.fecha|date:"d-m-Y H:i" }}</p>
+      <p class="huella">SHA-256 {{ firma_devolucion.huella }} {% if firma_devolucion.es_integra %}(verificada){% else %}<strong style="color:var(--rojo)">(no coincide con los datos)</strong>{% endif %}</p>
+    </div>
+    {% elif prestamo.activo %}
+    <div class="firma-acta silencio"><p>La firma de devolución aparecerá aquí cuando se registre.</p></div>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}

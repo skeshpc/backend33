@@ -1,0 +1,53 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}{{ orden.numero }}{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <a class="migas" href="{% url 'orden_lista' %}">Órdenes de trabajo</a>
+    <h1>{{ orden.numero }}, {{ orden.herramienta.codigo }}</h1>
+    <p>{{ orden.descripcion }}</p>
+  </div>
+  {% if perms.herramientas.ejecutar_orden %}
+  <div class="acciones">
+    {% if orden.estado == 'PROGRAMADA' %}
+    <form method="post" action="{% url 'orden_iniciar' orden.pk %}">{% csrf_token %}<button class="boton boton--principal" type="submit">Iniciar orden</button></form>
+    {% endif %}
+    {% if orden.abierta %}
+    <form method="post" action="{% url 'orden_cancelar' orden.pk %}">{% csrf_token %}<button class="boton boton--peligro" type="submit">Cancelar orden</button></form>
+    {% endif %}
+  </div>
+  {% endif %}
+</header>
+<div class="columnas">
+  <section class="hoja">
+    <h2>Detalle</h2>
+    <dl class="datos">
+      <div><dt>Estado</dt><dd><span class="estado {% if orden.estado == 'EN_CURSO' %}estado--ambar{% elif orden.estado == 'COMPLETADA' %}estado--verde{% else %}estado--gris{% endif %}">{{ orden.get_estado_display }}</span></dd></div>
+      <div><dt>Tipo</dt><dd>{{ orden.get_tipo_display }}</dd></div>
+      <div><dt>Herramienta</dt><dd><a href="{% url 'herramienta_detalle' orden.herramienta_id %}">{{ orden.herramienta.nombre }}</a></dd></div>
+      <div><dt>Situación de la herramienta</dt><dd><span class="estado estado--{{ orden.herramienta.estado }}">{{ orden.herramienta.get_estado_display }}</span></dd></div>
+      <div><dt>Programada</dt><dd>{{ orden.fecha_programada|date:"d-m-Y" }}</dd></div>
+      <div><dt>Técnico</dt><dd>{{ orden.tecnico|nombre_de:"Sin asignar" }}</dd></div>
+      <div><dt>Inicio</dt><dd>{{ orden.fecha_inicio|date:"d-m-Y H:i"|default:"Sin iniciar" }}</dd></div>
+      <div><dt>Término</dt><dd>{{ orden.fecha_termino|date:"d-m-Y H:i"|default:"Sin terminar" }}</dd></div>
+      {% if orden.plan %}<div><dt>Plan</dt><dd>{{ orden.plan.nombre }}</dd></div>{% endif %}
+      {% if orden.prestamo_origen %}<div><dt>Préstamo de origen</dt><dd><a href="{% url 'prestamo_acta' orden.prestamo_origen_id %}">{{ orden.prestamo_origen.numero }}</a></dd></div>{% endif %}
+      {% if orden.estado == 'COMPLETADA' %}<div><dt>Costo</dt><dd>{{ orden.costo|clp }}</dd></div>{% endif %}
+    </dl>
+    {% if orden.plan.instrucciones %}<h3 style="margin-top:1rem">Instrucciones</h3><p>{{ orden.plan.instrucciones|linebreaksbr }}</p>{% endif %}
+    {% if orden.trabajo_realizado %}<h3 style="margin-top:1rem">Trabajo realizado</h3><p>{{ orden.trabajo_realizado|linebreaksbr }}</p>{% endif %}
+  </section>
+  {% if orden.estado == 'EN_CURSO' and perms.herramientas.ejecutar_orden %}
+  <section class="hoja">
+    <h2>Completar orden</h2>
+    <form method="post" action="{% url 'orden_completar' orden.pk %}">
+      {% csrf_token %}
+      <div class="campo" style="margin-bottom:.7rem">{{ form.trabajo_realizado.label_tag }}{{ form.trabajo_realizado }}</div>
+      <div class="campo" style="margin-bottom:.7rem">{{ form.costo.label_tag }}{{ form.costo }}</div>
+      <button class="boton boton--principal" type="submit">Completar orden</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

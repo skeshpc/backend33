@@ -1,0 +1,86 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}{{ contratista.razon_social }}{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <a class="migas" href="{% url 'contratista_lista' %}">Contratistas</a>
+    <h1>{{ contratista.razon_social }}</h1>
+    <p>RUT {{ contratista.rut }}</p>
+  </div>
+  <div class="acciones">
+    {% if perms.herramientas.change_contratista %}<a class="boton" href="{% url 'contratista_editar' contratista.pk %}">Editar</a>{% endif %}
+    {% if perms.herramientas.delete_contratista %}<a class="boton boton--peligro" href="{% url 'contratista_eliminar' contratista.pk %}">Eliminar</a>{% endif %}
+  </div>
+</header>
+
+{% if contratista.bloqueado %}
+<div class="bloque-error">
+  Bloqueado{% if contratista.bloqueo_automatico %} automáticamente{% endif %}: {{ contratista.motivo_bloqueo }}.
+  No puede recibir herramientas{% if contratista.bloqueo_automatico %} hasta devolver las vencidas{% endif %}.
+</div>
+{% endif %}
+
+<div class="columnas">
+  <div>
+    <section class="hoja">
+      <h2>Préstamos</h2>
+      {% if prestamos %}
+      <div class="tabla-marco">
+        <table class="apilable">
+          <thead><tr><th>Préstamo</th><th>Herramienta</th><th>Obra</th><th>Límite</th><th>Situación</th><th class="numero">Cobro</th></tr></thead>
+          <tbody>
+            {% for p in prestamos %}
+            <tr>
+              <td data-etiqueta="Préstamo"><a href="{% url 'prestamo_acta' p.pk %}">{{ p.numero }}</a></td>
+              <td data-etiqueta="Herramienta">{{ p.herramienta.codigo }}</td>
+              <td data-etiqueta="Obra">{{ p.obra.nombre }}</td>
+              <td data-etiqueta="Límite">{{ p.fecha_limite|date:"d-m-Y" }}</td>
+              <td data-etiqueta="Situación">
+                {% if p.vencido %}<span class="estado estado--rojo">{{ p.dias_atraso }} día{{ p.dias_atraso|pluralize }} de atraso</span>
+                {% elif p.activo %}<span class="estado estado--EN_USO">En préstamo</span>
+                {% else %}<span class="estado estado--gris">Devuelto</span>{% endif %}
+              </td>
+              <td class="numero" data-etiqueta="Cobro">{{ p.cobro_a_la_fecha.monto_total|clp }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}<p class="silencio">Este contratista todavía no ha recibido herramientas.</p>{% endif %}
+    </section>
+  </div>
+  <div>
+    <section class="hoja">
+      <h2>Ficha</h2>
+      <dl class="datos">
+        <div><dt>Contacto</dt><dd>{{ contratista.contacto|default:"Sin registrar" }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ contratista.telefono|default:"Sin registrar" }}</dd></div>
+        <div><dt>Correo</dt><dd>{{ contratista.email|default:"Sin registrar" }}</dd></div>
+        <div><dt>Préstamos abiertos</dt><dd>{{ abiertos|length }}</dd></div>
+        {% if perms.herramientas.ver_cobros %}<div><dt>Total cobrado por devoluciones</dt><dd>{{ facturado|clp }}</dd></div>{% endif %}
+      </dl>
+      {% if perms.herramientas.ver_cobros %}<p style="margin:1rem 0 0"><a href="{% url 'cobros' %}?contratista={{ contratista.pk }}">Ver detalle de cobros</a></p>{% endif %}
+    </section>
+    {% if perms.herramientas.gestionar_bloqueo %}
+    <section class="hoja">
+      {% if contratista.bloqueado %}
+      <h2>Desbloquear</h2>
+      <form method="post" action="{% url 'contratista_desbloquear' contratista.pk %}">
+        {% csrf_token %}
+        <p class="chico silencio">Solo es posible si no tiene devoluciones vencidas.</p>
+        <button class="boton" type="submit">Desbloquear contratista</button>
+      </form>
+      {% else %}
+      <h2>Bloquear manualmente</h2>
+      <form method="post" action="{% url 'contratista_bloquear' contratista.pk %}">
+        {% csrf_token %}
+        <div class="campo" style="margin-bottom:.7rem">{{ form_bloqueo.motivo.label_tag }}{{ form_bloqueo.motivo }}</div>
+        <button class="boton boton--peligro" type="submit">Bloquear contratista</button>
+      </form>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

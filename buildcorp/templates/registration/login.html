@@ -1,0 +1,28 @@
+{% load static %}<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar | BuildCorp</title>
+  <link rel="stylesheet" href="{% static 'herramientas/css/app.css' %}">
+</head>
+<body>
+<div class="ingreso">
+  <section class="ingreso-tablero">
+    <h1>BuildCorp</h1>
+    <p>Cada herramienta en su lugar, o con la firma de quien la tiene.</p>
+  </section>
+  <main class="ingreso-form">
+    <h2>Ingresar al pañol</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.errors %}<div class="bloque-error">El usuario o la contraseña no coinciden. Revísalos e inténtalo de nuevo.</div>{% endif %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="campo"><label for="id_username">Usuario</label><input id="id_username" name="username" autocomplete="username" autofocus required value="{{ form.username.value|default:'' }}"></div>
+      <div class="campo"><label for="id_password">Contraseña</label><input id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="boton boton--principal" type="submit">Ingresar</button>
+    </form>
+  </main>
+</div>
+</body>
+</html>

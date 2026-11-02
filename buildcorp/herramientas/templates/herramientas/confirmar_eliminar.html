@@ -1,0 +1,13 @@
+{% extends "herramientas/base.html" %}
+{% block titulo %}Eliminar{% endblock %}
+{% block contenido %}
+<header class="cabecera"><h1>Eliminar {{ nombre|lower }}</h1></header>
+<form method="post" class="hoja form-angosto">
+  {% csrf_token %}
+  <p>Vas a eliminar <strong>{{ objeto }}</strong>. Esta acción no se puede deshacer.</p>
+  <div class="pie-form">
+    <button class="boton boton--peligro" type="submit">Eliminar definitivamente</button>
+    <a class="boton" href="{% url volver %}">Conservar</a>
+  </div>
+</form>
+{% endblock %}

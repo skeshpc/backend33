@@ -1,0 +1,50 @@
+{% extends "herramientas/base.html" %}
+{% load formatos %}
+{% block titulo %}Catálogo{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div><h1>Catálogo de herramientas</h1></div>
+  {% if perms.herramientas.add_herramienta %}<div class="acciones"><a class="boton boton--principal" href="{% url 'herramienta_crear' %}">Agregar herramienta</a></div>{% endif %}
+</header>
+<section class="hoja">
+  <form class="filtros" method="get">
+    <label>Buscar<input type="search" name="q" value="{{ consulta }}" placeholder="Código, nombre, marca o serie"></label>
+    <label>Estado
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for valor, nombre in estados %}<option value="{{ valor }}" {% if valor == estado %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Categoría
+      <select name="categoria">
+        <option value="">Todas</option>
+        {% for c in categorias %}<option value="{{ c.pk }}" {% if c.pk|stringformat:"d" == categoria %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="boton" type="submit">Filtrar</button>
+  </form>
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Código</th><th>Herramienta</th><th>Categoría</th><th>Estado</th><th class="numero">Horas de uso</th><th class="numero">Tarifa diaria</th><th>Ubicación</th></tr></thead>
+      <tbody>
+        {% for h in pagina %}
+        <tr>
+          <td data-etiqueta="Código"><a class="codigo" href="{{ h.get_absolute_url }}">{{ h.codigo }}</a></td>
+          <td data-etiqueta="Herramienta">{{ h.nombre }}</td>
+          <td data-etiqueta="Categoría">{{ h.categoria.nombre }}</td>
+          <td data-etiqueta="Estado"><span class="estado estado--{{ h.estado }}">{{ h.get_estado_display }}</span></td>
+          <td class="numero" data-etiqueta="Horas de uso">{{ h.horas_uso|floatformat:"-1" }}</td>
+          <td class="numero" data-etiqueta="Tarifa diaria">{{ h.tarifa_diaria|clp }}</td>
+          <td data-etiqueta="Ubicación">{{ h.ubicacion }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" %}
+  {% else %}
+  <p class="vacio">Ninguna herramienta coincide con estos filtros. Prueba con otra búsqueda o quita un filtro.</p>
+  {% endif %}
+</section>
+{% endblock %}

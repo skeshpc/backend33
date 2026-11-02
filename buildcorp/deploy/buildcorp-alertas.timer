@@ -1,0 +1,10 @@
+[Unit]
+Description=Ejecuta la revisión de BuildCorp cada 15 minutos
+
+[Timer]
+OnBootSec=2min
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

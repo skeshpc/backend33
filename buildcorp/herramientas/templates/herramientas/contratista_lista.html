@@ -1,0 +1,37 @@
+{% extends "herramientas/base.html" %}
+{% block titulo %}Contratistas{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <h1>Contratistas</h1>
+  {% if perms.herramientas.add_contratista %}<a class="boton boton--principal" href="{% url 'contratista_crear' %}">Agregar contratista</a>{% endif %}
+</header>
+<section class="hoja">
+  <form class="filtros" method="get">
+    <label>Buscar<input type="search" name="q" value="{{ consulta }}" placeholder="Razón social o RUT"></label>
+    <button class="boton" type="submit">Filtrar</button>
+    {% if solo_bloqueados %}<a class="boton" href="{% url 'contratista_lista' %}">Ver todos</a>{% else %}<a class="boton" href="?bloqueados=1">Ver solo bloqueados</a>{% endif %}
+  </form>
+  {% if pagina.object_list %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Contratista</th><th>RUT</th><th>Contacto</th><th>Situación</th><th class="numero">Préstamos abiertos</th><th class="numero">Vencidos</th></tr></thead>
+      <tbody>
+        {% for c in pagina %}
+        <tr>
+          <td data-etiqueta="Contratista"><a href="{{ c.get_absolute_url }}"><strong>{{ c.razon_social }}</strong></a></td>
+          <td data-etiqueta="RUT">{{ c.rut }}</td>
+          <td data-etiqueta="Contacto">{{ c.contacto }}</td>
+          <td data-etiqueta="Situación">
+            {% if c.bloqueado %}<span class="estado estado--rojo">Bloqueado</span>{% elif not c.activo %}<span class="estado estado--gris">Inactivo</span>{% else %}<span class="estado estado--verde">Habilitado</span>{% endif %}
+          </td>
+          <td class="numero" data-etiqueta="Préstamos abiertos">{{ c.activos }}</td>
+          <td class="numero" data-etiqueta="Vencidos">{{ c.vencidos }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "herramientas/_paginacion.html" %}
+  {% else %}<p class="vacio">Ningún contratista coincide con esta búsqueda.</p>{% endif %}
+</section>
+{% endblock %}

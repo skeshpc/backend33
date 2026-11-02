@@ -1,0 +1,39 @@
+{% extends "herramientas/base.html" %}
+{% block titulo %}Planes de mantenimiento{% endblock %}
+{% block contenido %}
+<header class="cabecera">
+  <div>
+    <h1>Planes de mantenimiento</h1>
+    <p>Cada plan se vence por fecha, por horas de uso o por lo que ocurra primero. Una herramienta con su plan vencido no se puede entregar.</p>
+  </div>
+  {% if perms.herramientas.add_planmantenimiento %}<a class="boton boton--principal" href="{% url 'plan_crear' %}">Agregar plan</a>{% endif %}
+</header>
+<section class="hoja">
+  {% if planes %}
+  <div class="tabla-marco">
+    <table class="apilable">
+      <thead><tr><th>Herramienta</th><th>Plan</th><th>Frecuencia</th><th>Próxima por fecha</th><th>Próxima por uso</th><th>Situación</th><th></th></tr></thead>
+      <tbody>
+        {% for plan in planes %}
+        <tr>
+          <td data-etiqueta="Herramienta"><a class="codigo" href="{% url 'herramienta_detalle' plan.herramienta_id %}">{{ plan.herramienta.codigo }}</a></td>
+          <td data-etiqueta="Plan">{{ plan.nombre }}</td>
+          <td data-etiqueta="Frecuencia">{% if plan.intervalo_dias %}Cada {{ plan.intervalo_dias }} días{% endif %}{% if plan.intervalo_dias and plan.intervalo_horas %} o {% endif %}{% if plan.intervalo_horas %}{% if plan.intervalo_dias %}cada {% else %}Cada {% endif %}{{ plan.intervalo_horas|floatformat:"-1" }} horas{% endif %}</td>
+          <td data-etiqueta="Próxima por fecha">{{ plan.proxima_fecha|date:"d-m-Y"|default:"No aplica" }}</td>
+          <td data-etiqueta="Próxima por uso">{% if plan.proximas_horas is not None %}{{ plan.herramienta.horas_uso|floatformat:"-1" }} de {{ plan.proximas_horas|floatformat:"-1" }} horas{% else %}No aplica{% endif %}</td>
+          <td data-etiqueta="Situación">
+            {% if not plan.activo %}<span class="estado estado--gris">Inactivo</span>
+            {% else %}<span class="estado {% if plan.situacion == 'VENCIDO' %}estado--rojo{% elif plan.situacion == 'PROXIMO' %}estado--ambar{% else %}estado--verde{% endif %}">{{ plan.situacion_display }}</span>{% endif %}
+          </td>
+          <td class="acciones-celda">
+            {% if perms.herramientas.change_planmantenimiento %}<a class="boton boton--chico" href="{% url 'plan_editar' plan.pk %}">Editar</a>{% endif %}
+            {% if perms.herramientas.delete_planmantenimiento %}<a class="boton boton--chico boton--peligro" href="{% url 'plan_eliminar' plan.pk %}">Eliminar</a>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="vacio">Agrega un plan para programar mantenciones por fecha o por uso.</p>{% endif %}
+</section>
+{% endblock %}

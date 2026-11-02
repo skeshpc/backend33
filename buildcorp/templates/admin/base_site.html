@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  :root, html[data-theme="light"], html[data-theme="dark"] {
+    --primary: #20413b;
+    --secondary: #2e5a51;
+    --accent: #f5bc14;
+    --header-bg: #20413b;
+    --header-link-color: #ffffff;
+    --breadcrumbs-bg: #2e5a51;
+    --button-bg: #20413b;
+    --button-hover-bg: #2e5a51;
+    --default-button-bg: #20413b;
+    --default-button-hover-bg: #2e5a51;
+    --link-selected-fg: #2e5a51;
+    --selected-row: #fbedc4;
+  }
+</style>
+{% endblock %}
+{% block userlinks %}<a href="{% url 'panel' %}">Volver al sistema</a> / {{ block.super }}{% endblock %}
